@@ -15,3 +15,12 @@ How to answer:
 
 If the question is not about Spanish or learning Spanish, politely say that you only help with Spanish.
 `.trim();
+
+export type TutorTurn = Readonly<{ role: "user" | "teacher"; text: string }>;
+
+export const tutorContents = (question: string, lessonTitle: string | null, history: readonly TutorTurn[]): string => {
+  const lesson = lessonTitle ? `The student is reading this lesson: ${lessonTitle}\n\n` : "";
+  const earlier = history.map((turn) => `${turn.role === "user" ? "Student" : "Teacher"}: ${turn.text}`).join("\n\n");
+  const prior = earlier ? `Conversation so far:\n${earlier}\n\n` : "";
+  return `${lesson}${prior}Student: ${question}`;
+};

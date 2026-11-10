@@ -1,32 +1,34 @@
 "use client";
 
 import { useState } from "react";
+import { ErrorBanner } from "@/components/error-banner";
 import { CheckIcon, XIcon } from "@/components/icons";
 import { useI18n } from "@/components/i18n-provider";
 import { ListenButtons } from "@/components/listen-buttons";
 import { SessionHeader, SessionSummary, SourceText, type SessionProps } from "./session-chrome";
+import { useRound } from "./use-round";
 
 export function FlipSession({ cards, onRestart, onExit }: SessionProps) {
   const { t } = useI18n();
-  const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
-  const [known, setKnown] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const round = useRound(cards, () => setError(t.errorGeneric));
 
-  if (index >= cards.length) {
-    return <SessionSummary known={known} total={cards.length} onRestart={onRestart} onExit={onExit} />;
+  if (round.finished || !round.card) {
+    return <SessionSummary known={round.known} total={round.originalTotal} onRestart={onRestart} onExit={onExit} />;
   }
 
-  const card = cards[index];
+  const card = round.card;
 
   const answer = (knewIt: boolean) => {
-    setKnown((value) => value + (knewIt ? 1 : 0));
     setFlipped(false);
-    setIndex((value) => value + 1);
+    round.grade(knewIt ? "correct" : "wrong");
   };
 
   return (
     <div className="space-y-5">
-      <SessionHeader index={index} total={cards.length} onExit={onExit} />
+      <ErrorBanner message={error} onClose={() => setError(null)} />
+      <SessionHeader index={round.index} total={round.total} onExit={onExit} />
 
       <div className="flip-card">
         <div className="flip-card-inner h-72" data-flipped={flipped}>
@@ -47,7 +49,7 @@ export function FlipSession({ cards, onRestart, onExit }: SessionProps) {
             <p className="spanish text-center text-3xl font-semibold text-ink" dir="ltr" lang="es-AR">
               {card.spanish}
             </p>
-            {flipped && <ListenButtons speechKey={`practice:${card.id}`} text={card.spanish} size="lg" />}
+            {flipped && <ListenButtons speechKey={`practice:${card.id}:${round.index}`} text={card.spanish} size="lg" />}
           </div>
         </div>
       </div>

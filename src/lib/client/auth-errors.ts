@@ -11,6 +11,7 @@ const AUTH_ERROR_KEYS: Readonly<Record<string, keyof Dictionary>> = {
   USERNAME_TOO_LONG: "authInvalidUsername",
   PASSWORD_TOO_SHORT: "authWeakPassword",
   INVALID_TOKEN: "resetInvalid",
+  EMAIL_NOT_VERIFIED: "authEmailUnverified",
 };
 
 export const authErrorMessage = (code: string | undefined, t: Dictionary): string =>

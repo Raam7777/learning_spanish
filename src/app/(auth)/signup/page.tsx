@@ -16,6 +16,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const onSubmit = async (event: FormEvent) => {
@@ -23,20 +24,37 @@ export default function SignupPage() {
     setBusy(true);
     setError(null);
     const cleanUsername = username.trim();
-    const { error: authError } = await authClient.signUp.email({
+    const { data, error: authError } = await authClient.signUp.email({
       email: email.trim(),
       password,
       name: cleanUsername,
       username: cleanUsername,
+      callbackURL: "/",
     });
     setBusy(false);
     if (authError) {
       setError(authErrorMessage(authError.code, t));
       return;
     }
+    if (!data?.token) {
+      setPending(true);
+      return;
+    }
     router.replace("/");
     router.refresh();
   };
+
+  if (pending) {
+    return (
+      <div className="card space-y-4 p-6">
+        <h2 className="text-xl font-bold text-ink">{t.signupTitle}</h2>
+        <p className="text-ink-soft">{t.signupCheckEmail}</p>
+        <Link href="/login" className="btn btn-primary w-full">
+          {t.backToLogin}
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={onSubmit} className="card space-y-4 p-6">

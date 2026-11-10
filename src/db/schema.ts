@@ -1,4 +1,5 @@
-import { boolean, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, index, integer, jsonb, pgTable, primaryKey, real, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import type { Topic } from "@/lib/topics";
 import type { BreakdownItem, SourceLanguage } from "@/lib/translation/types";
 
 export const user = pgTable("user", {
@@ -88,9 +89,32 @@ export const entry = pgTable(
     breakdown: jsonb("breakdown").$type<readonly BreakdownItem[]>().notNull(),
     note: text("note"),
     starred: boolean("starred").notNull().default(false),
+    topic: text("topic").$type<Topic>(),
+    dueAt: timestamp("due_at", { withTimezone: true }).notNull().defaultNow(),
+    ease: real("ease").notNull().default(2.5),
+    intervalDays: integer("interval_days").notNull().default(0),
+    repetitions: integer("repetitions").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("entry_user_created_idx").on(table.userId, table.createdAt)],
+  (table) => [
+    index("entry_user_created_idx").on(table.userId, table.createdAt),
+    index("entry_user_due_idx").on(table.userId, table.dueAt),
+  ],
+);
+
+export const starterReview = pgTable(
+  "starter_review",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    cardId: text("card_id").notNull(),
+    dueAt: timestamp("due_at", { withTimezone: true }).notNull().defaultNow(),
+    ease: real("ease").notNull().default(2.5),
+    intervalDays: integer("interval_days").notNull().default(0),
+    repetitions: integer("repetitions").notNull().default(0),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.cardId] })],
 );
 
 export type Entry = typeof entry.$inferSelect;

@@ -16,6 +16,28 @@ const resetEmailHtml = (url: string): string => `
   <p style="color:#7a6e63;font-size:13px">אם לא ביקשת איפוס, אפשר להתעלם מהמייל הזה.</p>
 </div>`;
 
+const verificationEmailHtml = (url: string): string => `
+<div dir="rtl" style="font-family:Arial,sans-serif;background:#fbf6ec;padding:24px;color:#2b2622">
+  <h2 style="color:#c65d3b;margin:0 0 12px">אישור אימייל · Che Español</h2>
+  <p>לחצו על הכפתור כדי לאשר את האימייל. הקישור תקף לשעה אחת.</p>
+  <p dir="ltr" style="text-align:right">Click the button to confirm your email. The link is valid for one hour.</p>
+  <p><a href="${url}" style="display:inline-block;background:#c65d3b;color:#fff;padding:12px 20px;border-radius:12px;text-decoration:none">אישור האימייל · Confirm email</a></p>
+</div>`;
+
+export const sendVerificationEmail = async ({ to, userId, url }: ResetEmail): Promise<void> => {
+  const { error } = await getResend().emails.send({
+    from: optionalEnv("EMAIL_FROM", "Che Español <onboarding@resend.dev>"),
+    to,
+    subject: "אישור אימייל · Confirm your email",
+    html: verificationEmailHtml(url),
+  });
+  if (error) {
+    logger.error("Failed to send verification email", { userId, provider: "resend", error: error.message });
+    throw new Error("Failed to send verification email");
+  }
+  logger.info("Verification email sent", { userId, provider: "resend" });
+};
+
 export const sendResetPasswordEmail = async ({ to, userId, url }: ResetEmail): Promise<void> => {
   const { error } = await getResend().emails.send({
     from: optionalEnv("EMAIL_FROM", "Che Español <onboarding@resend.dev>"),

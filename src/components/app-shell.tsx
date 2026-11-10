@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { AlphabetIcon, BookIcon, CardsIcon, HistoryIcon, LogoutIcon, SunIcon, TranslateIcon } from "@/components/icons";
+import { InstallPrompt } from "@/components/install-prompt";
 import { useI18n } from "@/components/i18n-provider";
 import { authClient } from "@/lib/auth-client";
 import type { Dictionary } from "@/lib/i18n/dictionary";
@@ -60,6 +61,7 @@ export function AppShell({ username, children }: { username: string; children: R
         </div>
       </header>
 
+      <InstallPrompt />
       <main className="flex-1 px-4 pt-5 pb-28">{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-card/95 backdrop-blur pb-[env(safe-area-inset-bottom)]">

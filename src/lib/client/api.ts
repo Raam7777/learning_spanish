@@ -1,6 +1,11 @@
 import type { ApiErrorCode } from "@/lib/api";
 import type { EntryDto } from "@/lib/entries/dto";
 import type { Page } from "@/lib/entries/repository";
+import type { PracticeCard } from "@/lib/practice/cards";
+import type { Grade } from "@/lib/practice/schedule";
+import type { Topic } from "@/lib/topics";
+
+export type PracticePool = "due" | "all" | "starred" | "starter";
 
 export class ApiError extends Error {
   constructor(readonly code: ApiErrorCode | "network") {
@@ -32,21 +37,46 @@ const query = (params: Readonly<Record<string, string | number | undefined>>): s
 export const translate = (text: string): Promise<EntryDto> =>
   request<EntryDto>("/api/translations", { method: "POST", body: JSON.stringify({ text }) });
 
-export const fetchEntries = (params: { q?: string; starred?: boolean; page?: number; limit?: number }) =>
+export const fetchEntries = (params: { q?: string; starred?: boolean; topic?: Topic; page?: number; limit?: number }) =>
   request<Page<EntryDto>>(
-    `/api/entries?${query({ q: params.q, starred: params.starred ? "1" : undefined, page: params.page, limit: params.limit })}`,
+    `/api/entries?${query({
+      q: params.q,
+      starred: params.starred ? "1" : undefined,
+      topic: params.topic,
+      page: params.page,
+      limit: params.limit,
+    })}`,
   );
 
-export const fetchPracticeCards = (pool: "all" | "starred") =>
-  request<{ data: EntryDto[] }>(`/api/practice?${query({ pool })}`);
+export const fetchPracticeCards = (pool: PracticePool, topic?: Topic) =>
+  request<{ data: PracticeCard[]; nextDueAt: string | null }>(`/api/practice?${query({ pool, topic })}`);
+
+export const reviewCard = (kind: PracticeCard["kind"], id: string, result: Grade): Promise<{ dueAt: string }> =>
+  request<{ dueAt: string }>("/api/practice/review", { method: "POST", body: JSON.stringify({ kind, id, result }) });
 
 export const updateStarred = (id: string, starred: boolean): Promise<EntryDto> =>
   request<EntryDto>(`/api/entries/${id}`, { method: "PATCH", body: JSON.stringify({ starred }) });
+
+export const updateTopic = (id: string, topic: Topic | null): Promise<EntryDto> =>
+  request<EntryDto>(`/api/entries/${id}`, { method: "PATCH", body: JSON.stringify({ topic }) });
+
+export const fetchUsage = (): Promise<{ used: number; limit: number; remaining: number }> =>
+  request<{ used: number; limit: number; remaining: number }>("/api/usage");
+
+export const importLesson = (lessonId: string): Promise<{ added: number }> =>
+  request<{ added: number }>("/api/entries/import", { method: "POST", body: JSON.stringify({ lessonId }) });
 
 export const removeEntry = (id: string): Promise<void> => request<void>(`/api/entries/${id}`, { method: "DELETE" });
 
 export const translateNote = (text: string, target: "he" | "en"): Promise<{ text: string }> =>
   request<{ text: string }>("/api/notes/translate", { method: "POST", body: JSON.stringify({ text, target }) });
 
-export const askTutor = (question: string): Promise<{ text: string }> =>
-  request<{ text: string }>("/api/tutor", { method: "POST", body: JSON.stringify({ question }) });
+export const askTutor = (
+  question: string,
+  lessonId?: string,
+  history?: readonly { role: "user" | "teacher"; text: string }[],
+): Promise<{ text: string }> =>
+  request<{ text: string }>("/api/tutor", {
+    method: "POST",
+    body: JSON.stringify({ question, lessonId, history }),
+  });

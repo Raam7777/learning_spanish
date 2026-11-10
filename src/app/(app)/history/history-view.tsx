@@ -6,53 +6,74 @@ import { ErrorBanner } from "@/components/error-banner";
 import { SearchIcon, StarIcon } from "@/components/icons";
 import { useI18n } from "@/components/i18n-provider";
 import { useEntryActions } from "@/components/use-entry-actions";
-import { fetchEntries } from "@/lib/client/api";
+import { TopicChips } from "@/components/topic-chips";
+import { ApiError, fetchEntries } from "@/lib/client/api";
 import { useDebounced } from "@/lib/client/use-debounced";
 import type { EntryDto } from "@/lib/entries/dto";
+import type { Topic } from "@/lib/topics";
+
+const HISTORY_CACHE = "che-history-v2";
 
 const PAGE_SIZE = 20;
 
-const filterKey = (q: string, starred: boolean): string => `${starred ? "1" : "0"}|${q}`;
+const filterKey = (q: string, starred: boolean, topic: Topic | null): string => `${starred ? "1" : "0"}|${topic ?? ""}|${q}`;
+
+const readCache = (): readonly EntryDto[] => {
+  try {
+    const raw = localStorage.getItem(HISTORY_CACHE);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? (parsed as EntryDto[]) : [];
+  } catch {
+    return [];
+  }
+};
 
 export function HistoryView() {
   const { t } = useI18n();
   const [search, setSearch] = useState("");
   const [starredOnly, setStarredOnly] = useState(false);
+  const [topic, setTopic] = useState<Topic | null>(null);
   const [entries, setEntries] = useState<readonly EntryDto[]>([]);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [offline, setOffline] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toggleStar, remove } = useEntryActions(setEntries, setError);
+  const { toggleStar, remove, setTopic: saveTopic } = useEntryActions(setEntries, setError);
   const q = useDebounced(search.trim(), 300);
-  const currentKey = filterKey(q, starredOnly);
+  const currentKey = filterKey(q, starredOnly, topic);
   const loading = loadedKey !== currentKey || loadingMore;
 
   useEffect(() => {
     const state = { cancelled: false };
-    fetchEntries({ q, starred: starredOnly, page: 1, limit: PAGE_SIZE })
+    fetchEntries({ q, starred: starredOnly, topic: topic ?? undefined, page: 1, limit: PAGE_SIZE })
       .then((result) => {
         if (state.cancelled) return;
+        setOffline(false);
         setEntries(result.data);
         setPage(result.page);
         setPages(result.pages);
-        setLoadedKey(filterKey(q, starredOnly));
+        setLoadedKey(filterKey(q, starredOnly, topic));
+        if (!q && !starredOnly && !topic) localStorage.setItem(HISTORY_CACHE, JSON.stringify(result.data));
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (state.cancelled) return;
-        setError(t.errorGeneric);
-        setLoadedKey(filterKey(q, starredOnly));
+        const cached = !q && !starredOnly && !topic && error instanceof ApiError && error.code === "network" ? readCache() : [];
+        setOffline(cached.length > 0);
+        setEntries(cached);
+        setError(cached.length > 0 ? null : t.errorGeneric);
+        setLoadedKey(filterKey(q, starredOnly, topic));
       });
     return () => {
       state.cancelled = true;
     };
-  }, [q, starredOnly, t.errorGeneric]);
+  }, [q, starredOnly, topic, t.errorGeneric]);
 
   const loadMore = async () => {
     setLoadingMore(true);
     try {
-      const result = await fetchEntries({ q, starred: starredOnly, page: page + 1, limit: PAGE_SIZE });
+      const result = await fetchEntries({ q, starred: starredOnly, topic: topic ?? undefined, page: page + 1, limit: PAGE_SIZE });
       setEntries((current) => [...current, ...result.data]);
       setPage(result.page);
       setPages(result.pages);
@@ -63,7 +84,7 @@ export function HistoryView() {
     }
   };
 
-  const emptyText = q || starredOnly ? t.noResults : t.emptyHistory;
+  const emptyText = q || starredOnly || topic ? t.noResults : t.emptyHistory;
 
   return (
     <div className="space-y-5">
@@ -90,13 +111,15 @@ export function HistoryView() {
             {t.filterStarred}
           </button>
         </div>
+        <TopicChips value={topic} onChange={setTopic} allowAll />
       </div>
 
+      {offline && <p className="text-sm text-ink-soft">{t.offlineHistory}</p>}
       <ErrorBanner message={error} onClose={() => setError(null)} />
 
       <div className={`space-y-3 transition-opacity ${loadedKey !== currentKey ? "opacity-50" : ""}`}>
         {entries.map((entry) => (
-          <EntryCard key={entry.id} entry={entry} onToggleStar={toggleStar} onDelete={remove} />
+          <EntryCard key={entry.id} entry={entry} onToggleStar={toggleStar} onDelete={remove} onSetTopic={saveTopic} />
         ))}
       </div>
 

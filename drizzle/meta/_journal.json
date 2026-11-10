@@ -15,6 +15,13 @@
       "when": 1794312281861,
       "tag": "0001_ai_call",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794320331934,
+      "tag": "0002_learning",
+      "breakpoints": true
     }
   ]
 }

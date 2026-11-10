@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { useI18n } from "@/components/i18n-provider";
 import { GRAMMAR_LESSONS } from "@/lib/grammar/lessons";
 import { GrammarTutor } from "./grammar-tutor";
+import { LessonQuiz } from "./lesson-quiz";
 
 export function GrammarView() {
   const { t, lang } = useI18n();
+  const [lessonId, setLessonId] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
@@ -16,7 +19,14 @@ export function GrammarView() {
 
       <div className="space-y-3">
         {GRAMMAR_LESSONS.map((lesson) => (
-          <details key={lesson.id} className="card p-4">
+          <details
+            key={lesson.id}
+            className="card p-4"
+            onToggle={(event) => {
+              const open = event.currentTarget.open;
+              setLessonId((current) => (open ? lesson.id : current === lesson.id ? null : current));
+            }}
+          >
             <summary className="flex cursor-pointer list-none flex-col gap-0.5">
               <span className="font-bold text-ink">{lesson.title[lang]}</span>
               <span className="text-sm text-ink-soft">{lesson.summary[lang]}</span>
@@ -40,11 +50,12 @@ export function GrammarView() {
                 </div>
               ))}
             </div>
+            <LessonQuiz lesson={lesson} />
           </details>
         ))}
       </div>
 
-      <GrammarTutor />
+      <GrammarTutor lessonId={lessonId} />
     </div>
   );
 }

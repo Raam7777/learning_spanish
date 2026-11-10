@@ -5,7 +5,9 @@ import { useI18n } from "@/components/i18n-provider";
 import { ListenButtons } from "@/components/listen-buttons";
 import { NoteTranslation } from "@/components/note-translation";
 import { useSpeech } from "@/components/speech-provider";
+import { TopicChips } from "@/components/topic-chips";
 import type { EntryDto } from "@/lib/entries/dto";
+import type { Topic } from "@/lib/topics";
 
 type Props = Readonly<{
   entry: EntryDto;
@@ -13,6 +15,7 @@ type Props = Readonly<{
   highlight?: boolean;
   onToggleStar: (entry: EntryDto) => void;
   onDelete: (entry: EntryDto) => void;
+  onSetTopic: (entry: EntryDto, topic: Topic | null) => void;
 }>;
 
 const formatDate = (iso: string, lang: string): string =>
@@ -45,7 +48,7 @@ function Breakdown({ entry }: { entry: EntryDto }) {
   );
 }
 
-export function EntryCard({ entry, expanded = true, highlight = false, onToggleStar, onDelete }: Props) {
+export function EntryCard({ entry, expanded = true, highlight = false, onToggleStar, onDelete, onSetTopic }: Props) {
   const { t, lang } = useI18n();
 
   return (
@@ -86,8 +89,12 @@ export function EntryCard({ entry, expanded = true, highlight = false, onToggleS
         </time>
       </div>
 
-      {expanded && (entry.breakdown.length > 1 || entry.note) && (
+      {expanded && (
         <div className="space-y-3 border-t border-dashed border-line bg-paper/60 px-4 py-4">
+          <section className="space-y-2">
+            <h3 className="text-xs font-semibold tracking-wide text-ink-soft uppercase">{t.topicLabel}</h3>
+            <TopicChips value={entry.topic} onChange={(topic) => onSetTopic(entry, topic)} />
+          </section>
           {entry.breakdown.length > 1 && (
             <section className="space-y-2">
               <h3 className="text-xs font-semibold tracking-wide text-ink-soft uppercase">{t.breakdown}</h3>

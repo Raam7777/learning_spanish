@@ -5,7 +5,7 @@ import { username } from "better-auth/plugins";
 import { headers } from "next/headers";
 import { getDb } from "@/db";
 import * as schema from "@/db/schema";
-import { sendResetPasswordEmail } from "@/lib/email";
+import { sendResetPasswordEmail, sendVerificationEmail } from "@/lib/email";
 import { memoize } from "@/lib/memoize";
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9_.]+$/;
@@ -27,9 +27,19 @@ const createAuth = () =>
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 8,
+      requireEmailVerification: true,
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) => {
         await sendResetPasswordEmail({ to: user.email, userId: user.id, url });
+      },
+    },
+    emailVerification: {
+      sendOnSignUp: true,
+      sendOnSignIn: true,
+      autoSignInAfterVerification: true,
+      expiresIn: 60 * 60,
+      sendVerificationEmail: async ({ user, url }) => {
+        await sendVerificationEmail({ to: user.email, userId: user.id, url });
       },
     },
     session: {

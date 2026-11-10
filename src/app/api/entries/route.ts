@@ -8,7 +8,7 @@ export const GET = (request: Request) =>
     const parsed = listQuerySchema.safeParse(searchParamsObject(request));
     if (!parsed.success) return apiError("invalid_input", 400);
 
-    const { q, starred, page, limit } = parsed.data;
-    const result = await listEntries({ userId: user.id, query: q, starredOnly: starred === "1" }, page, limit);
+    const { q, starred, topic, page, limit } = parsed.data;
+    const result = await listEntries({ userId: user.id, query: q, starredOnly: starred === "1", topic }, page, limit);
     return NextResponse.json({ ...result, data: result.data.map(toEntryDto) });
   });

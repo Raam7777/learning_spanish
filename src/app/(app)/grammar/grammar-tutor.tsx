@@ -8,7 +8,9 @@ import { ApiError, askTutor } from "@/lib/client/api";
 
 type Message = Readonly<{ role: "user" | "teacher"; text: string }>;
 
-export function GrammarTutor() {
+const remembered = (messages: readonly Message[]): readonly Message[] => messages.slice(-6);
+
+export function GrammarTutor({ lessonId }: { lessonId: string | null }) {
   const { t } = useI18n();
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<readonly Message[]>([]);
@@ -21,7 +23,7 @@ export function GrammarTutor() {
     setBusy(true);
     setError(null);
     try {
-      const { text } = await askTutor(value);
+      const { text } = await askTutor(value, lessonId ?? undefined, remembered(messages));
       setMessages((current) => [...current, { role: "user", text: value }, { role: "teacher", text }]);
       setQuestion("");
     } catch (err) {

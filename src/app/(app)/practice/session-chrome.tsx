@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { XIcon } from "@/components/icons";
 import { useI18n } from "@/components/i18n-provider";
-import type { EntryDto } from "@/lib/entries/dto";
+import type { PracticeCard } from "@/lib/practice/cards";
 
 type HeaderProps = Readonly<{ index: number; total: number; onExit: () => void }>;
 
@@ -62,7 +62,7 @@ export function SourceText({ children }: { children: ReactNode }) {
 }
 
 export type SessionProps = Readonly<{
-  cards: readonly EntryDto[];
+  cards: readonly PracticeCard[];
   onRestart: () => void;
   onExit: () => void;
 }>;

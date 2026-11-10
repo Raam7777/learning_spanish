@@ -8,7 +8,7 @@ import { SendIcon } from "@/components/icons";
 import { useI18n } from "@/components/i18n-provider";
 import { useSpeech } from "@/components/speech-provider";
 import { useEntryActions } from "@/components/use-entry-actions";
-import { ApiError, fetchEntries, translate } from "@/lib/client/api";
+import { ApiError, fetchEntries, fetchUsage, translate } from "@/lib/client/api";
 import type { EntryDto } from "@/lib/entries/dto";
 import type { Dictionary } from "@/lib/i18n/dictionary";
 import { MAX_INPUT_LENGTH } from "@/lib/translation/schema";
@@ -30,12 +30,16 @@ export function TranslateView() {
   const [error, setError] = useState<string | null>(null);
   const [entries, setEntries] = useState<readonly EntryDto[]>([]);
   const [latestId, setLatestId] = useState<string | null>(null);
-  const { toggleStar, remove } = useEntryActions(setEntries, setError);
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const { toggleStar, remove, setTopic } = useEntryActions(setEntries, setError);
 
   useEffect(() => {
     fetchEntries({ limit: RECENT_COUNT })
       .then((page) => setEntries(page.data))
       .catch(() => setError(t.errorGeneric));
+    fetchUsage()
+      .then((usage) => setRemaining(usage.remaining))
+      .catch(() => undefined);
   }, [t.errorGeneric]);
 
   const submit = useCallback(async () => {
@@ -47,6 +51,7 @@ export function TranslateView() {
       const created = await translate(value);
       setEntries((current) => [created, ...current].slice(0, RECENT_COUNT));
       setLatestId(created.id);
+      setRemaining((current) => (current === null ? current : Math.max(0, current - 1)));
       setText("");
     } catch (err) {
       setError(errorMessage(err, t));
@@ -75,6 +80,11 @@ export function TranslateView() {
       <section className="space-y-1">
         <h1 className="spanish text-3xl font-bold text-ink">¡Hola, che!</h1>
         <p className="text-ink-soft">{t.tagline}</p>
+        {remaining !== null && (
+          <p className="text-sm text-ink-soft tabular-nums">
+            {t.quotaRemaining} {remaining} {t.quotaUnit}
+          </p>
+        )}
       </section>
 
       <form onSubmit={onSubmit} className="card notebook-margin space-y-3 p-4 ps-8">
@@ -103,7 +113,7 @@ export function TranslateView() {
 
       <ErrorBanner message={error} onClose={() => setError(null)} />
 
-      {latest && <EntryCard entry={latest} highlight onToggleStar={toggleStar} onDelete={remove} />}
+      {latest && <EntryCard entry={latest} highlight onToggleStar={toggleStar} onDelete={remove} onSetTopic={setTopic} />}
 
       {supported && !argentineVoice && latest && <p className="text-xs text-ink-soft">{t.voiceHint}</p>}
 
@@ -121,7 +131,7 @@ export function TranslateView() {
         ) : (
           <div className="space-y-3">
             {rest.map((entry) => (
-              <EntryCard key={entry.id} entry={entry} expanded={false} onToggleStar={toggleStar} onDelete={remove} />
+              <EntryCard key={entry.id} entry={entry} expanded={false} onToggleStar={toggleStar} onDelete={remove} onSetTopic={setTopic} />
             ))}
           </div>
         )}

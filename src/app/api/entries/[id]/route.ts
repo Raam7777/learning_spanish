@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiError, readJson, withUser } from "@/lib/api";
 import { entryIdSchema, toEntryDto, updateEntrySchema } from "@/lib/entries/dto";
-import { deleteEntry, setEntryStarred } from "@/lib/entries/repository";
+import { deleteEntry, updateOwnedEntry } from "@/lib/entries/repository";
 
 type Context = Readonly<{ params: Promise<{ id: string }> }>;
 
@@ -15,7 +15,7 @@ export const PATCH = (request: Request, context: Context) =>
     const [id, body] = await Promise.all([parseId(context), readJson(request, updateEntrySchema)]);
     if (!id || !body) return apiError("invalid_input", 400);
 
-    const updated = await setEntryStarred(user.id, id, body.starred);
+    const updated = await updateOwnedEntry(user.id, id, body);
     return updated ? NextResponse.json(toEntryDto(updated)) : apiError("not_found", 404);
   });
 

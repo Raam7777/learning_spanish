@@ -2,8 +2,9 @@
 
 import { useCallback, type Dispatch, type SetStateAction } from "react";
 import { useI18n } from "@/components/i18n-provider";
-import { removeEntry, updateStarred } from "@/lib/client/api";
+import { removeEntry, updateStarred, updateTopic } from "@/lib/client/api";
 import type { EntryDto } from "@/lib/entries/dto";
+import type { Topic } from "@/lib/topics";
 
 type SetEntries = Dispatch<SetStateAction<readonly EntryDto[]>>;
 
@@ -39,5 +40,17 @@ export const useEntryActions = (setEntries: SetEntries, onError: (message: strin
     [setEntries, onError, t],
   );
 
-  return { toggleStar, remove };
+  const setTopic = useCallback(
+    async (entry: EntryDto, topic: Topic | null) => {
+      const optimistic = { ...entry, topic };
+      setEntries(replaceEntry(optimistic));
+      await updateTopic(entry.id, topic).catch(() => {
+        setEntries(replaceEntry(entry));
+        onError(t.errorGeneric);
+      });
+    },
+    [setEntries, onError, t],
+  );
+
+  return { toggleStar, remove, setTopic };
 };

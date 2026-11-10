@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { apiError, withUser } from "@/lib/api";
-import { practiceQuerySchema, searchParamsObject, toEntryDto } from "@/lib/entries/dto";
-import { randomEntries } from "@/lib/entries/repository";
+import { practiceQuerySchema, searchParamsObject } from "@/lib/entries/dto";
+import { getServerLang } from "@/lib/i18n/server";
+import { selectPractice } from "@/lib/practice/select";
 
 export const GET = (request: Request) =>
   withUser(async (user) => {
     const parsed = practiceQuerySchema.safeParse(searchParamsObject(request));
     if (!parsed.success) return apiError("invalid_input", 400);
 
-    const { pool, limit } = parsed.data;
-    const cards = await randomEntries({ userId: user.id, starredOnly: pool === "starred" }, limit);
-    return NextResponse.json({ data: cards.map(toEntryDto) });
+    const { pool, topic, limit } = parsed.data;
+    const selection = await selectPractice(user.id, pool, topic, limit, await getServerLang(), new Date());
+    return NextResponse.json(selection);
   });
