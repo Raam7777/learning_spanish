@@ -1,0 +1,41 @@
+{
+  "name": "spanish-argentina",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "bash scripts/use-node.sh next dev",
+    "build": "bash scripts/use-node.sh next build",
+    "start": "bash scripts/use-node.sh next start",
+    "lint": "bash scripts/use-node.sh eslint .",
+    "typecheck": "bash scripts/use-node.sh tsc --noEmit",
+    "db:generate": "bash scripts/use-node.sh drizzle-kit generate",
+    "db:migrate": "bash scripts/use-node.sh node scripts/migrate.mjs",
+    "db:push": "bash scripts/use-node.sh drizzle-kit push"
+  },
+  "dependencies": {
+    "@google/genai": "^2.32.0",
+    "@neondatabase/serverless": "^1.2.0",
+    "better-auth": "^1.7.14",
+    "drizzle-orm": "^0.45.4",
+    "next": "^16.4.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "resend": "^6.35.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^16",
+    "drizzle-kit": "^0.31.11",
+    "eslint": "^9",
+    "eslint-config-next": "^16.4.3",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5"
+  }
+}
